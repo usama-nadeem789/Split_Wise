@@ -1,0 +1,22 @@
+<h1> Expenses Dashboard</h1>
+
+<%= link_to "Add New Expense", new_expense_path%>
+
+<% if @recent_expenses.any? %>
+  <h2> Your Recent Expenses </h2>
+  <ul>
+    <% @recent_expenses.each do |expense| %>
+      <li> <%= link_to expense.description, expense_path(expense) %></li>
+    <% end %>
+  </ul>
+
+  <h2> Top Expenses payed by you by amount </h2>
+  <ul>
+    <% @top_amount_expenses.each do |expense| %>
+      <li> <%= link_to expense.description, expense_path(expense) %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <li>No expenses available</li>
+<% end %>
+

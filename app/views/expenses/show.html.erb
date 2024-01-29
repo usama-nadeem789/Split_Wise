@@ -1,0 +1,11 @@
+<h1> <%= @expense.description%> </h1> <%= button_to 'Delete Expense', expense_path(@expense), method: :delete%>
+<h4> Total amount : <%= @expense.total_amount %> </h4>
+
+<h2>Users and Payments:</h2>
+<ul>
+  <% @expense_users.each do |expense_user| %>
+    <li>
+      <%= "#{expense_user.user.email} paid #{expense_user.amount_paid_by_user} at (Date : #{expense_user.created_at.strftime("%d/%m/%Y")} )" %>
+    </li>
+  <% end %>
+</ul>

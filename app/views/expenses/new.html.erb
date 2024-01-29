@@ -1,0 +1,115 @@
+<h1>Add New Expense</h1>
+
+<% if @expense.errors.any? %>
+  <div>
+    <h2>Errors : </h2>
+    <% @expense.errors.full_messages.each do |message| %>
+      <li><%= message %></li>
+    <% end %>
+    <br>
+  </div>
+<% end %>
+
+<%= form_with(model: @expense, url: expenses_path, method: :post) do |form| %>
+  <div>
+    <%= form.label :description %>
+    <%= form.text_field :description %>
+  </div>
+
+  <div>
+    <%= form.label :total_amount %>
+    <%= form.number_field :total_amount %>
+  </div>
+
+  <div>
+    <%= form.label :amount_paid_by_current_user, "Amount Paid By You" %>
+    <%= form.number_field :amount_paid_by_current_user%>
+  </div>
+
+  <div id="new-user-fields-div"></div>
+  <%= button_tag 'Add User', type: :button, onclick: 'addNewUser()' %>  
+
+  <div>  
+    <%= form.submit 'Create Expense', onclick: 'return validateUsers() && validateTotalAmount()' %>
+  </div>
+
+<% end %>
+
+<script>
+  let userCount = 0;
+  let currentUserEmail = "<%= @user.email %>";
+
+  function addNewUser() {
+    const newUserDiv = document.getElementById('new-user-fields-div');
+    const userEmail = `users_attributes[${userCount}][email]`;
+    const userAmount = `users_attributes[${userCount}][amount_paid_by_user]`;
+
+    const inputField = document.createElement('div');
+    inputField.innerHTML = `
+      <label for="${userEmail}">User Email:</label>
+      <input type="email" name="${userEmail}" id="${userEmail}" required>
+      <label for="${userAmount}">Amount Paid by this User:</label>
+      <input type="text" name="${userAmount}" id="${userAmount}">
+    `;
+
+    newUserDiv.appendChild(inputField);
+    userCount++;
+  }
+
+  function validateUsers() {
+    if (userCount === 0) {
+      alert('Add at least one user');
+      return false;
+    }
+
+    else {
+      for (let i = 0; i < userCount; i++) {
+        let enteredEmail = document.getElementById(`users_attributes[${i}][email]`).value;
+        if (enteredEmail === currentUserEmail) {
+            alert('You cannot add your own email as a user');
+            return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  function validateTotalAmount() {
+    let totalAmountPaidByUsers = 0;
+    let totalAmount = parseFloat(document.getElementById('expense_total_amount').value);
+
+    let amountPaidByCurrentUser = parseFloat(document.getElementById('expense_amount_paid_by_current_user').value);
+    if (amountPaidByCurrentUser == '') {
+      amountPaidByCurrentUser = 0;
+    }
+    if (amountPaidByCurrentUser < 0) {
+      alert('Enter amount greater than 0');
+      return false;
+    }
+
+    totalAmountPaidByUsers += amountPaidByCurrentUser;
+
+    for (let i = 0; i < userCount; i++) {
+      let amountPayedByUser = document.getElementById(`users_attributes[${i}][amount_paid_by_user]`).value;
+
+      if (amountPayedByUser == '') {
+        amountPayedByUser = 0;
+      }
+      if (amountPayedByUser < 0) {
+        alert('Enter amount greater than 0');
+        return false;
+      }
+      totalAmountPaidByUsers += parseFloat(amountPayedByUser);
+    }
+
+    if (totalAmount !== totalAmountPaidByUsers) {
+      alert('The total amount and amount paid by users do not match');
+      return false;
+    }
+
+    return true;
+  }
+
+</script>
+
