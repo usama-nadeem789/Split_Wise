@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ExpensesController < ApplicationController
-  before_action :set_expense, only: [:show, :destroy]
+  before_action :set_expense, only: %i[show destroy edit update]
 
   def index
     @recent_expenses = current_user.expenses.order(created_at: :desc).limit(5)
@@ -20,14 +20,17 @@ class ExpensesController < ApplicationController
   def create
     @user = current_user
     @expense = Expense.new(expense_params)
-    amount_paid_by_current_user = params['expense']['amount_paid_by_current_user']
 
-    amount_paid_by_current_user = 0 if amount_paid_by_current_user.blank?
+    if @expense.save
 
-    current_user_expense = @expense.user_expenses.new(user: current_user,
-                                                      amount_paid_by_user: amount_paid_by_current_user)
+      current_user_expense = @expense.user_expenses.new(user: current_user,
+                                                        amount_paid_by_user: params['expense']['amount_paid_by_current_user'])
+      unless current_user_expense.save
+        @expense.errors.add(:base, 'Error in saving current user expense')
+        render :new
+        return
+      end
 
-    if @expense.save && current_user_expense.save
       params['users_attributes'].each_value do |user|
         if user['email'].empty?
           @expense.errors.add(:base, 'Email of each user is required')
@@ -39,11 +42,7 @@ class ExpensesController < ApplicationController
 
         new_user ||= User.invite!({ email: user['email'] }, current_user)
 
-        amount_paid_by_user = user['amount_paid_by_user']
-
-        amount_paid_by_user = 0 if amount_paid_by_user.blank?
-
-        user_expense = @expense.user_expenses.new(user: new_user, amount_paid_by_user:)
+        user_expense = @expense.user_expenses.new(user: new_user, amount_paid_by_user: user['amount_paid_by_user'])
 
         @expense.errors.add(:base, 'Error creating Expense Users') unless user_expense.save
       end
@@ -61,8 +60,54 @@ class ExpensesController < ApplicationController
   end
 
   def destroy
-    if @expense.destroy
-      redirect_to expenses_path, notice: "Expense deleted successfully"
+    return unless @expense.destroy
+
+    redirect_to expenses_path, notice: 'Expense deleted successfully'
+  end
+
+  def edit
+    @expense_users = @expense.user_expenses
+  end
+
+  def update
+    if @expense.update(expense_params)
+      user_expense = UserExpense.find_by(user: current_user, expense: @expense)
+
+      user_expense.amount_paid_by_user = params['expense']['amount_paid_by_current_user']
+
+      unless user_expense.save
+        @expense.errors.add(:base, 'Error in updating current user expense')
+        @expense_users = @expense.user_expenses
+        render :edit
+        return
+      end
+
+      params['users_attributes'].each_value do |user|
+        paid_by = User.find_by(email: user['email'])
+        user_expense = UserExpense.find_by(user: paid_by, expense: @expense)
+
+        unless user_expense
+          @expense.errors.add(:base, 'User with this email is not sharing the current expense')
+          @expense_users = @expense.user_expenses
+          render :edit
+          return
+        end
+
+        user_expense.amount_paid_by_user = user['amount_paid_by_user']
+
+        next if user_expense.save
+
+        @expense.errors.add(:base, 'Error in updating user expense')
+        @expense_users = @expense.user_expenses
+        render :edit
+        return
+      end
+
+      redirect_to expense_path(@expense), notice: 'Expense updated successfully'
+    else
+      @expense.errors.add(:base, 'Error in updating Expense')
+      @expense_users = @expense.user_expenses
+      render :edit
     end
   end
 

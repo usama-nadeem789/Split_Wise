@@ -1,4 +1,24 @@
-<h1>Add New Expense</h1>
+<script>
+  let userCount = 0;
+  function addNewUser(amountPayedByUser,emailOfUserPayed) {
+    const newUserDiv = document.getElementById('new-user-fields-div');
+    const userEmail = `users_attributes[${userCount}][email]`;
+    const userAmount = `users_attributes[${userCount}][amount_paid_by_user]`;
+
+    const inputField = document.createElement('div');
+    inputField.innerHTML = `
+      <label for="${userEmail}">User Email:</label>
+      <input type="email" name="${userEmail}" id="${userEmail}" readonly value="${emailOfUserPayed}">
+      <label for="${userAmount}">Amount Paid by this User:</label>
+      <input type="text" name="${userAmount}" id="${userAmount}" value="${amountPayedByUser}">
+    `;
+
+    newUserDiv.appendChild(inputField);
+    userCount++;
+  }
+</script>
+
+<h1>Edit Expense</h1>
 
 <% if @expense.errors.any? %>
   <div>
@@ -10,70 +30,47 @@
   </div>
 <% end %>
 
-<%= form_with(model: @expense, url: expenses_path, method: :post) do |form| %>
+<%= form_with(model: @expense, url: expense_path(@expense), method: :patch) do |form| %>
   <div>
-    <%= form.label :description%>
+    <%= form.label :description %>
     <%= form.text_field :description%>
   </div>
-
   <div>
     <%= form.label :total_amount %>
     <%= form.text_field :total_amount %>
   </div>
 
+  <br>
+  <h3> Amount paid by Users </h3>
+  <div id="new-user-fields-div"></div>
+
+  <% @amount_paid_by_current_loggedin_user%>
+
+  <% @expense_users.each do |expense_user| %>
+    <% if expense_user.user_id == current_user.id%>
+      <% @amount_paid_by_current_loggedin_user = expense_user.amount_paid_by_user%>
+    <% else %>
+      <script>
+        <% fetched_user = User.find(expense_user.user_id)%>
+        addNewUser('<%= expense_user.amount_paid_by_user %>','<%= fetched_user.email %>');
+      </script>
+    <% end %>
+  <% end %>
+
+  <br>
   <div>
     <%= form.label :amount_paid_by_current_user, "Amount Paid By You" %>
-    <%= form.text_field :amount_paid_by_current_user%>
+    <%= form.text_field :amount_paid_by_current_user, value: @amount_paid_by_current_loggedin_user%>
   </div>
-
-  <div id="new-user-fields-div"></div>
-  <%= button_tag 'Add User', type: :button, onclick: 'addNewUser()' %>  
-
+  <br>
   <div>  
-    <%= form.submit 'Create Expense', onclick: 'return validateUsers() && validateTotalAmount()' %>
+    <%= form.submit 'Update Expense', onclick: 'return validateTotalAmount()'%>
   </div>
-
+  <%= link_to "Cancel", expense_path(@expense)%>
 <% end %>
 
+
 <script>
-  let userCount = 0;
-  let currentUserEmail = "<%= @user.email %>";
-
-  function addNewUser() {
-    const newUserDiv = document.getElementById('new-user-fields-div');
-    const userEmail = `users_attributes[${userCount}][email]`;
-    const userAmount = `users_attributes[${userCount}][amount_paid_by_user]`;
-
-    const inputField = document.createElement('div');
-    inputField.innerHTML = `
-      <label for="${userEmail}">User Email:</label>
-      <input type="email" name="${userEmail}" id="${userEmail}" required>
-      <label for="${userAmount}">Amount Paid by this User:</label>
-      <input type="text" name="${userAmount}" id="${userAmount}">
-    `;
-
-    newUserDiv.appendChild(inputField);
-    userCount++;
-  }
-
-  function validateUsers() {
-    if (userCount === 0) {
-      alert('Add at least one user');
-      return false;
-    }
-
-    else {
-      for (let i = 0; i < userCount; i++) {
-        let enteredEmail = document.getElementById(`users_attributes[${i}][email]`).value;
-        if (enteredEmail === currentUserEmail) {
-            alert('You cannot add your own email as a user');
-            return false;
-        }
-      }
-    }
-
-    return true;
-  }
 
   function validateTotalAmount() {
     let totalAmountPaidByUsers = 0;
@@ -138,6 +135,5 @@
 
     return true;
   }
-
 </script>
 

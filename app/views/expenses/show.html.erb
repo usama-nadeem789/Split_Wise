@@ -1,11 +1,25 @@
 <h1> <%= @expense.description%> </h1> <%= button_to 'Delete Expense', expense_path(@expense), method: :delete%>
 <h4> Total amount : <%= @expense.total_amount %> </h4>
 
+<% equal_amount = @expense_users.sum(:amount_paid_by_user) / @expense_users.size%>
+<h4> Equal Share : <%= equal_amount%> </h4> 
+
 <h2>Users and Payments:</h2>
 <ul>
   <% @expense_users.each do |expense_user| %>
     <li>
-      <%= "#{expense_user.user.email} paid #{expense_user.amount_paid_by_user} at (Date : #{expense_user.created_at.strftime("%d/%m/%Y")} )" %>
+      <%= expense_user.user.email %> paid <%= expense_user.amount_paid_by_user %> at (Date : <%= expense_user.created_at.strftime("%d/%m/%y")%>)
+      <% amount_to_be_adjust = equal_amount - expense_user.amount_paid_by_user%>
+      <% if amount_to_be_adjust > 0%>
+        (Have to pay <%= amount_to_be_adjust%>)
+      <% elsif amount_to_be_adjust < 0%>
+        (Have to take <%= amount_to_be_adjust.abs%> back)
+      <% else %>
+        (Have Payed Total Amount )
+      <% end %>
+      
     </li>
   <% end %>
 </ul>
+</h1> <%= link_to 'Edit Expense', edit_expense_path(@expense)%> <br>
+</h1> <%= link_to 'Go Back', expenses_path%>

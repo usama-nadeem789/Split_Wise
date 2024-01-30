@@ -2,7 +2,7 @@
 
 Rails.application.routes.draw do
   devise_for :users
-  resources :expenses, only: [:index, :new, :create, :show, :destroy]
+  resources :expenses
   root 'expenses#index'
   get '*path', to: 'errors#route_not_found', via: :all
 end
