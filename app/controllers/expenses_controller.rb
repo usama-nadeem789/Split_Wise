@@ -22,19 +22,18 @@ class ExpensesController < ApplicationController
     @expense = Expense.new(expense_params)
 
     if @expense.save
-
       current_user_expense = @expense.user_expenses.new(user: current_user,
                                                         amount_paid_by_user: params['expense']['amount_paid_by_current_user'])
       unless current_user_expense.save
         @expense.errors.add(:base, 'Error in saving current user expense')
-        render :new
+        render :new, alert: 'Error in saving current user expense'
         return
       end
 
       params['users_attributes'].each_value do |user|
         if user['email'].empty?
           @expense.errors.add(:base, 'Email of each user is required')
-          render :new
+          render :new, alert: 'Error in saving current user expense'
           return
         end
 
@@ -55,7 +54,7 @@ class ExpensesController < ApplicationController
 
     else
       @expense.errors.add(:base, 'Error in creating a new Expense')
-      render :new
+      render :new, alert: 'Error in creating a new Expense'
     end
   end
 
@@ -78,7 +77,7 @@ class ExpensesController < ApplicationController
       unless user_expense.save
         @expense.errors.add(:base, 'Error in updating current user expense')
         @expense_users = @expense.user_expenses
-        render :edit
+        render :edit, alert: 'Error in updating current user expense'
         return
       end
 
@@ -89,7 +88,7 @@ class ExpensesController < ApplicationController
         unless user_expense
           @expense.errors.add(:base, 'User with this email is not sharing the current expense')
           @expense_users = @expense.user_expenses
-          render :edit
+          render :edit, alert: 'User with this email is not sharing the current expense'
           return
         end
 
@@ -99,7 +98,7 @@ class ExpensesController < ApplicationController
 
         @expense.errors.add(:base, 'Error in updating user expense')
         @expense_users = @expense.user_expenses
-        render :edit
+        render :edit, alert: 'Error in updating Expense'
         return
       end
 
@@ -107,7 +106,7 @@ class ExpensesController < ApplicationController
     else
       @expense.errors.add(:base, 'Error in updating Expense')
       @expense_users = @expense.user_expenses
-      render :edit
+      render :edit, alert: 'Error in updating Expense'
     end
   end
 

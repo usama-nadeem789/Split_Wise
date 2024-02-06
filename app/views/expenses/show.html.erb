@@ -8,7 +8,12 @@
 <ul>
   <% @expense_users.each do |expense_user| %>
     <li>
-      <%= expense_user.user.email %> paid <%= expense_user.amount_paid_by_user %> at (Date : <%= expense_user.created_at.strftime("%d/%m/%y")%>)
+      <% if expense_user.user.name == nil %>
+        Invited user with mail: <%= expense_user.user.email %> paid <%= expense_user.amount_paid_by_user %> at (Date : <%= expense_user.created_at.strftime("%d/%m/%y")%>)
+      <% else %>
+        <%= expense_user.user.name %> paid <%= expense_user.amount_paid_by_user %> at (Date : <%= expense_user.created_at.strftime("%d/%m/%y")%>)
+      <% end %>
+      
       <% amount_to_be_adjust = equal_amount - expense_user.amount_paid_by_user%>
       <% if amount_to_be_adjust > 0%>
         (Have to pay <%= amount_to_be_adjust%>)

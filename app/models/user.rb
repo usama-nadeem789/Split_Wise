@@ -6,6 +6,7 @@ class User < ApplicationRecord
   devise :invitable, :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
+  validates :name, presence: { allow_blank: false }
   has_many :user_expenses, dependent: :destroy
   has_many :expenses, through: :user_expenses
 end
